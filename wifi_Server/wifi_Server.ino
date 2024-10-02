@@ -55,7 +55,7 @@ void determineDirection(String direction) {
     } else if (direction == "back") {
       Serial.println("back");
     } else {
-      sendResponse(404, "Existing directions: left, forward, right, back!");
+      sendResponse(400, "Existing directions: left, forward, right, back!");
       return;
     }
     sendResponse(200, "Сar moving " + direction);
