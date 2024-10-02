@@ -17,7 +17,7 @@ void handleRoot() {
   sendData(200, "Existing path: /car\n" + queryExample);
 }
 
-void sendData(int code, String text){
+void sendResponse(int code, String text) {
     StaticJsonDocument<100> JSONData;
     JSONData["code"] = code;
     JSONData["text"] = text;
@@ -26,54 +26,39 @@ void sendData(int code, String text){
     server.send(code, "application/json", data);
 }
 
-void receiveData(){
-   StaticJsonDocument<300> JSONData;
-   // Deserialize the JSON document
-   String jsonString = server.arg("plain");
+void receiveData() {
+  StaticJsonDocument<300> JSONData;
+  String jsonString = server.arg("plain");
   DeserializationError error = deserializeJson(JSONData, jsonString);
    
-  // Test if parsing succeeds.
   if (error) {
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
-    server.send(500,"application/json","Error in parsing");
+    sendResponse(500, "Error in parsing")
     return;
-  }else{
-   if(JSONData.containsKey("direction")){
-    Serial.println("HELOO MOTHERFUCker");
-   // server.send(200,"application/json",String(JSONData["direction"].as<String>())+" Received");
-    sendData(200,String(JSONData["direction"].as<String>())+" Received");
-   }
-  //  else{
-  //    server.send(400,"application/json","Bad JSON");
-    
-   }
   }
+  
+  if (JSONData.containsKey("direction")) {
+    determineDirection(String(JSONData["direction"].as<String>()));
+  } else {
+    sendResponse(400, "Bad JSON");
+  }
+}
 
 void determineDirection(String direction) {
-    if(direction == "forward") {
+    if (direction == "forward") {
       Serial.println("forward"); 
-    } else if(direction == "left") {
+    } else if (direction == "left") {
       Serial.println("left");  
-    } else if(direction == "right") {
+    } else if (direction == "right") {
       Serial.println("right");
     } else if (direction == "back") {
       Serial.println("back");
     } else {
-      sendData(404, "Existing directions: left, forward, right, back!");
+      sendResponse(404, "Existing directions: left, forward, right, back!");
       return;
     }
-    sendData(200, "car move " + direction);
-}
-
-void handleDirection() {
-  if (!server.hasArg("direction")) {
-    sendData(404, "Not Found, you should add parameter \"direction\"\n" + queryExample);
-    return;
-  }
-
-  String direction = server.arg("direction");
-  determineDirection(direction);
+    sendResponse(200, "Сar moving " + direction);
 }
 
 void setup() {
@@ -94,6 +79,5 @@ void setup() {
 }
 
 void loop() {
-  // Handle client requests
   server.handleClient();
 }
