@@ -1,56 +1,60 @@
-#include <WiFi.h>              // For ESP32
-#include <WebServer.h>          // Synchronous WebServer library
+#include <WiFi.h>              
+#include <WebServer.h>          
 #include <ArduinoJson.h>
-// Replace with your network credentials
+
 const char* ssid = "Kyivstar_38";
 const char* password = "zhenya06041982";
 String queryExample = "For example ip/car?direction=forward";
-// Create a WebServer object on port 80
+
 WebServer server(80);
-void handleRoot(){
-  server.send(200, "text/plain", "Existing path: /car\n" + queryExample);
+
+void configureRoutes() {
+  server.on("/car", handleDirection);
+  server.on("/", handleRoot);
 }
 
-void sendData(){
-    StaticJsonDocument<300> JSONData;
-    // Use the object just like a javascript object or a python dictionary
-    JSONData["code"] = "200";
-    JSONData["text"] = "carMove";
-    // You can add more fields
-    char data[300];
-    // Converts the JSON object to String and stores it in data variable
-    serializeJson(JSONData,data);
-  server.send(200,"application/json",data);
+void handleRoot() {
+  sendData(200, "Existing path: /car\n" + queryExample)
 }
 
-void handleDirection(){
-  if(server.hasArg("direction")){
-    String direction = server.arg("direction");
-    
-      if(direction == "forward") {
-        
-      }else if(direction == "left"){
-          
-      }else if(direction == "right"){
-          
-      }else if (direction == "back"){
-          Serial.println("asdfghj");
-      }else {
-        server.send(404, "text/plain", "Existing directions: left, forward, right, back!");
-        return;
-        }
-        //server.send(200, "application/json", "car move " + direction);
-        sendData();
-  } else{
-    server.send(404, "text/plain", "Not Found, you should add parameter \"direction\"\n" + queryExample);
+void sendData(int code, String text){
+    StaticJsonDocument<100> JSONData;
+    JSONData["code"] = code;
+    JSONData["text"] = text;
+    char data[100];
+    serializeJson(JSONData, data);
+    server.send(code, "application/json", data);
+}
+
+void determineDirection(String direction) {
+    if(direction == "forward") {
+      Serial.println("forward"); 
+    } else if(direction == "left") {
+      Serial.println("left");  
+    } else if(direction == "right") {
+      Serial.println("right");
+    } else if (direction == "back") {
+      Serial.println("back");
+    } else {
+      sendData(404, "Existing directions: left, forward, right, back!");
+      return;
+    }
+    sendData(200, "car move " + direction);
+}
+
+void handleDirection() {
+  if (!server.hasArg("direction")) {
+    sendData(404, "Not Found, you should add parameter \"direction\"\n" + queryExample);
+    return;
   }
+
+  String direction = server.arg("direction");
+  determineDirection(direction)
 }
 
 void setup() {
-  // Start the serial communication
   Serial.begin(115200);
 
-  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
@@ -58,10 +62,8 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
-  // Define routes
-  server.on("/car",handleDirection);
-  server.on("/",handleRoot);
-  // Start the server
+  configureRoutes();
+
   server.begin();
   Serial.println("HTTP server started");
   Serial.println(WiFi.localIP());
