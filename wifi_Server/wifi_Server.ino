@@ -1,6 +1,6 @@
 #include <WiFi.h>              // For ESP32
 #include <WebServer.h>          // Synchronous WebServer library
-
+#include <ArduinoJson.h>
 // Replace with your network credentials
 const char* ssid = "Kyivstar_38";
 const char* password = "zhenya06041982";
@@ -10,6 +10,19 @@ WebServer server(80);
 void handleRoot(){
   server.send(200, "text/plain", "Existing path: /car\n" + queryExample);
 }
+
+void sendData(){
+    StaticJsonDocument<300> JSONData;
+    // Use the object just like a javascript object or a python dictionary
+    JSONData["code"] = "200";
+    JSONData["text"] = "carMove";
+    // You can add more fields
+    char data[300];
+    // Converts the JSON object to String and stores it in data variable
+    serializeJson(JSONData,data);
+  server.send(200,"application/json",data);
+}
+
 void handleDirection(){
   if(server.hasArg("direction")){
     String direction = server.arg("direction");
@@ -21,12 +34,13 @@ void handleDirection(){
       }else if(direction == "right"){
           
       }else if (direction == "back"){
-          
+          Serial.println("asdfghj");
       }else {
         server.send(404, "text/plain", "Existing directions: left, forward, right, back!");
         return;
         }
-        server.send(200, "text/plain", "car move " + direction);
+        //server.send(200, "application/json", "car move " + direction);
+        sendData();
   } else{
     server.send(404, "text/plain", "Not Found, you should add parameter \"direction\"\n" + queryExample);
   }
