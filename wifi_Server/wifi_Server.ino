@@ -9,12 +9,12 @@ String queryExample = "For example ip/car?direction=forward";
 WebServer server(80);
 
 void configureRoutes() {
-  server.on("/car", handleDirection);
-  server.on("/", handleRoot);
+  server.on("/car",HTTP_POST,receiveData);
+  server.on("/", HTTP_GET, handleRoot);
 }
 
 void handleRoot() {
-  sendData(200, "Existing path: /car\n" + queryExample)
+  sendData(200, "Existing path: /car\n" + queryExample);
 }
 
 void sendData(int code, String text){
@@ -25,6 +25,30 @@ void sendData(int code, String text){
     serializeJson(JSONData, data);
     server.send(code, "application/json", data);
 }
+
+void receiveData(){
+   StaticJsonDocument<300> JSONData;
+   // Deserialize the JSON document
+   String jsonString = server.arg("plain");
+  DeserializationError error = deserializeJson(JSONData, jsonString);
+   
+  // Test if parsing succeeds.
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
+    server.send(500,"application/json","Error in parsing");
+    return;
+  }else{
+   if(JSONData.containsKey("direction")){
+    Serial.println("HELOO MOTHERFUCker");
+   // server.send(200,"application/json",String(JSONData["direction"].as<String>())+" Received");
+    sendData(200,String(JSONData["direction"].as<String>())+" Received");
+   }
+  //  else{
+  //    server.send(400,"application/json","Bad JSON");
+    
+   }
+  }
 
 void determineDirection(String direction) {
     if(direction == "forward") {
@@ -49,7 +73,7 @@ void handleDirection() {
   }
 
   String direction = server.arg("direction");
-  determineDirection(direction)
+  determineDirection(direction);
 }
 
 void setup() {
